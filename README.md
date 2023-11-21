@@ -2,13 +2,14 @@
 
 ## Overview
 
-This boilerplate is designed for setting up Python projects using Docker. It includes Husky for commit hooks and linting, and Poetry for Python dependency management and virtual environments. The setup ensures that these tools run within Docker containers, eliminating the need for local installation.
+This boilerplate is designed for setting up Python projects using Docker, enabling a seamless development experience both locally and in containerized environments. It includes Husky for commit hooks and linting, and Poetry for Python dependency management and virtual environments, all running within Docker containers. This setup eliminates the need for local installation of these tools, ensuring a consistent development environment.
 
 ## Key Components
 
-- **Dockerfile**: Defines the Python environment and installs dependencies via Poetry.
-- **docker-compose.yml**: Manages the services, including the Node.js environment for Husky and the Python application.
-- **Husky Setup**: Manages pre-commit hooks and linting, running within a Node.js Docker container.
+- **Dockerfile**: Defines the Python environment and installs dependencies via Poetry, creating a virtual environment.
+- **docker-compose.yml**: Manages services, including the Node.js environment for Husky and the Python application.
+- **Husky Setup**: Manages pre-commit hooks and linting, executed within a Node.js Docker container.
+- **Entrypoint Script**: Ensures the virtual environment is correctly set up and synchronized on container start.
 
 ## Getting Started
 
@@ -22,49 +23,49 @@ This boilerplate is designed for setting up Python projects using Docker. It inc
 
 ### Python Virtual Environment
 
-The virtual environment is created inside the `/app` directory and is named `.venv`. This allows the IDE to access it when mounted to the host.
+The virtual environment is managed within the Docker container to ensure consistency across development setups. An entrypoint script checks if the virtual environment (`/usr/src/app/.venv`) is empty and, if so, repopulates it using Poetry.
 
-1. Update `docker-compose.yml` to include the `.venv` volume mapping.
-2. Run your Python application or manage dependencies using:
+1. To run commands within this virtual environment:
    ```bash
-   docker compose exec app poetry add <package-name>
    docker compose exec app poetry run <command>
    ```
 
-### Adding Python Packages
-
-To add new Python packages, use Poetry via Docker Compose:
-
-```bash
-docker-compose exec app poetry add <package-name>
-```
+2. To add new Python packages:
+   ```bash
+   docker compose exec app poetry add <package-name>
+   ```
 
 ### Running the Application
 
-To start the application, use Docker Compose:
-
+Start the application with Docker Compose:
 ```bash
-docker-compose up
+docker compose up
 ```
+
+This command initiates the entrypoint script, ensuring the virtual environment is prepared before starting the application.
 
 ## Additional Information
 
 ### Structure
 
-- `/app`: Contains the Python application and Dockerfile.
-- Root directory: Contains configuration files and setup scripts.
+- `/app`: Contains the Python application, Dockerfile, and the virtual environment.
+- Root directory: Contains configuration files, setup scripts, and Node.js related files.
 
 ### Customization
 
 - Modify the Dockerfile for specific Python versions or dependencies.
 - Update `docker-compose.yml` for additional services or configurations.
+- Adjust the entrypoint script as needed for specific startup behaviors.
 
-Certainly! Here's a paragraph note explaining the use of Docker with the `docker compose` command, which has replaced the older `docker-compose`:
+### Docker Compose Usage
 
-### Paragraph Note on Docker Compose Usage
-
-In this project, we utilize Docker along with the `docker compose` command, which is the newer iteration of `docker-compose`. The `docker compose` command is integrated directly into the Docker CLI as a plugin, streamlining the process of defining and running multi-container Docker applications. With this integration, Docker simplifies the orchestration of complex container setups, making it more efficient and user-friendly. Commands that previously were executed as `docker-compose up`, `docker-compose build`, etc., are now run as `docker compose up`, `docker compose build`, and so on, directly through the Docker CLI. This change reflects Docker's ongoing effort to enhance the developer experience by incorporating commonly used tools directly into its core command set.
+This project utilizes the `docker compose` command, the modern iteration of `docker-compose`. Integrated directly into the Docker CLI, it streamlines defining and running multi-container Docker applications. Commands like `docker-compose up` or `docker-compose build` are now simplified to `docker compose up` and `docker compose build`, enhancing user experience by embedding common tools into Docker's core command set.
 
 ## Contributing
 
-Contributions to improve this boilerplate are welcome. Please follow standard GitHub pull request procedures.
+Contributions to improve this boilerplate are welcome. Please adhere to standard GitHub pull request procedures.
+
+## License
+
+MIT. 
+See [LICENSE](LICENSE) for more details.

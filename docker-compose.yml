@@ -1,0 +1,36 @@
+version: "3"
+
+services:
+  # Node container (for Husky, linting, etc).
+  node:
+    image: node:latest
+    restart: unless-stopped
+    working_dir: /usr/src/app
+    networks:
+      - internal
+    command: ["tail", "-f", "/dev/null"]
+    volumes:
+      - /usr/bin/git:/usr/bin/git:ro
+      - ~/.gitconfig:/home/node/.gitconfig:ro
+      - .:/usr/src/app
+
+  # App we want to build using our /app/Dockerfile.
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    working_dir: /usr/src/app
+    networks:
+      - internal
+    command: ["tail", "-f", "/dev/null"]
+    volumes:
+      - ./app:/usr/src/app
+
+# There are 2 networks: external and internal.
+networks:
+  external:
+    driver: bridge
+  internal:
+    driver: bridge
+

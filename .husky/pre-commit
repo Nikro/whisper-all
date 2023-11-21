@@ -1,0 +1,3 @@
+#!/bin/sh
+# Redirect the husky hook to a script that runs inside the Docker container
+./docker-husky.sh 'npm run lint'

@@ -1,0 +1,3 @@
+#!/bin/sh
+# Redirect the husky commit-msg hook to run commitlint inside the Docker container
+./docker-husky.sh 'npx --no-install commitlint --edit "$1"'

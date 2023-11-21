@@ -1,0 +1,38 @@
+# Byte-compiled / optimized / DLL files
+app/__pycache__/
+app/*.py[cod]
+
+# C extensions
+app/*.so
+
+# Distribution / packaging
+app/dist/
+app/build/
+app/*.egg-info/
+app/.installed.cfg
+
+# Python virtual environment
+app/.venv
+app/.env
+
+# Unit test / coverage reports
+app/htmlcov/
+app/.coverage
+app/.coverage.*
+app/.pytest_cache/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE Specific settings
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Operating System generated files
+.DS_Store
+Thumbs.db

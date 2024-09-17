@@ -1,0 +1,51 @@
+{
+  "appId": "WhisperAll",
+  "productName": "WhisperAll",
+  "asar": true,
+  "directories": {
+    "output": "release/${version}"
+  },
+  "files": [
+    "dist-electron/**/*",
+    "dist/**/*"
+  ],
+  "linux": {
+    "artifactName": "${productName}_${version}_${arch}.${ext}",
+    "category": "Utility",
+    "target": [
+      "AppImage",
+      "deb",
+      "snap"
+    ]
+  },
+  "mac": {
+    "artifactName": "${productName}_${version}.${ext}",
+    "target": [
+      "dmg",
+      "zip"
+    ]
+  },
+  "win": {
+    "artifactName": "${productName}_${version}.${ext}",
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64",
+          "ia32"
+        ]
+      }
+    ]
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "deleteAppDataOnUninstall": false
+  },
+  "publish": {
+    "provider": "generic",
+    "channel": "latest",
+    "url": "https://github.com/electron-vite/electron-vite-react/releases/download/v${version}/"
+  }
+}

@@ -1,5 +1,3 @@
-version: "3"
-
 services:
   # Node container (for Husky, linting, etc).
   node:
@@ -21,12 +19,27 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     working_dir: /usr/src/app
+    ports:
+      - 5173:5173
     networks:
       - internal
-    command: ["tail", "-f", "/dev/null"]
+    # command: ["tail", "-f", "/dev/null"]
+    #command: ["sh", "-c", "dbus-launch --exit-with-session npm run build"]
     volumes:
       - ./app:/usr/src/app
-
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ${XDG_RUNTIME_DIR}/pulse/native:${XDG_RUNTIME_DIR}/pulse/native
+      - /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket
+    environment:
+      - DISPLAY=unix${DISPLAY}
+      - PULSE_SERVER=unix:${XDG_RUNTIME_DIR}/pulse/native
+      - DBUS_SESSION_BUS_ADDRESS=unix:path=/var/run/dbus/system_bus_socket
+      - LIBGL_ALWAYS_SOFTWARE=1
+      - ELECTRON_DISABLE_GPU=1
+      - NVIDIA_VISIBLE_DEVICES=all
+    security_opt:
+      - apparmor:unconfined
+      
 # There are 2 networks: external and internal.
 networks:
   external:

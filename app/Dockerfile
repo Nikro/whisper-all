@@ -1,42 +1,34 @@
-# Use the official lightweight Python image.
-FROM python:3.10-slim
+# Use a Node.js base image
+FROM node:latest
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-ENV POETRY_VERSION 1.1.13
-ENV PYTHONPATH /usr/src/app
+RUN apt-get update && apt-get install -y \
+    libnss3 \
+    libgtk-3-0 \
+    libx11-xcb1 \
+    libxss1 \
+    libasound2 \
+    libgbm-dev \
+    dbus-x11 \
+    dbus \
+    libgl1-mesa-glx \
+    libgl1-mesa-dri \
+    xdg-utils \   
+    libcanberra-gtk-module \
+    libcanberra-gtk3-module \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install system dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential gcc g++ curl && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install Poetry
-RUN curl -sSL https://install.python-poetry.org | python3 -
-
-# Add Poetry to PATH in .bashrc for interactive sessions
-RUN echo "export PATH=\"/root/.local/bin:$PATH\"" >> /root/.bashrc
-
-# Set the PATH for subsequent Docker layers
-ENV PATH "/root/.local/bin:${PATH}"
-
-RUN poetry --version
 
 # Set the working directory inside the container
 WORKDIR /usr/src/app
 
-# Copy the pyproject.toml file (and optionally poetry.lock) into the container
-COPY pyproject.toml poetry.lock* ./
+# Install Electron Forge
+RUN npm install -g @electron-forge/cli
 
-# Install project dependencies
-RUN poetry config virtualenvs.in-project true \
-    && poetry install --no-interaction --no-ansi
-
-# Copy the rest of your app's source code from your host to your image filesystem.
+# Bundle app source
 COPY . .
 
-# Run the command to start your application
-EXPOSE 8000
-CMD ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0"]
-ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
+# Install dependencies, including Electron
+RUN npm install
+
+# Command to run your app (adjust as needed)
+CMD ["sh", "-c", "dbus-launch --exit-with-session npm run dev"]

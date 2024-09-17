@@ -1,0 +1,20 @@
+# Ignore configuration files
+.eslintrc.js
+commitlint.config.js
+docker-compose.yml
+Dockerfile
+*.config.js
+*.config.ts
+setup.sh
+docker-husky.sh
+
+# Ignore build directories
+app/dist
+app/dist-electron
+app/build
+app/node_modules
+
+# Ignore other irrelevant files
+app/public
+app/release
+app/vite.config.flat.txt

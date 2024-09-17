@@ -1,0 +1,7 @@
+node_modules
+dist
+build
+app/dist
+app/dist-electron
+app/build
+app/release

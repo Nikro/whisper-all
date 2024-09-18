@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Tray, Menu, screen } from 'electron';
+import { app, BrowserWindow, ipcMain, Tray, Menu } from 'electron';
 import { release } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -6,11 +6,11 @@ import { fileURLToPath } from 'node:url';
 globalThis.__filename = fileURLToPath(import.meta.url);
 globalThis.__dirname = dirname(__filename);
 
-process.env.DIST_ELECTRON = join(__dirname, '../');
-process.env.DIST = join(process.env.DIST_ELECTRON, '../dist');
-process.env.VITE_PUBLIC = process.env.VITE_DEV_SERVER_URL
-  ? join(process.env.DIST_ELECTRON, '../public')
-  : process.env.DIST;
+const DIST_ELECTRON = join(__dirname, '../');
+const DIST = join(DIST_ELECTRON, '../dist');
+const VITE_PUBLIC = process.env.VITE_DEV_SERVER_URL
+  ? join(DIST_ELECTRON, '../public')
+  : DIST;
 
 app.disableHardwareAcceleration();
 
@@ -25,146 +25,147 @@ if (!app.requestSingleInstanceLock()) {
   process.exit(0);
 }
 
-// Remove electron security warnings
-// This warning only shows in development mode
-// Read more on https://www.electronjs.org/docs/latest/tutorial/security
-// process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
-
-let win: BrowserWindow | null = null;
 let tray: Tray | null = null;
-let currentView: 'main' | 'settings' | null = null;
 const preload = join(__dirname, '../preload/index.mjs');
 
 // Determine the base URL depending on the environment
-const isDevelopment = process.env.NODE_ENV === 'development';
-const devUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173'; // Vite server URL
-const prodUrl = `file://${join(__dirname, '../dist/index.html')}`; // Production URL
-const startUrl = isDevelopment ? devUrl : prodUrl;
+const isDevelopment = !app.isPackaged;
+const startUrl = isDevelopment
+  ? process.env.VITE_DEV_SERVER_URL!
+  : `file://${join(DIST, 'index.html')}`;
 
-function createWindow(view: 'main' | 'settings') {
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width, height } = primaryDisplay.workAreaSize;
+let mainWin: BrowserWindow | null = null;
+let settingsWin: BrowserWindow | null = null;
 
-  let windowOptions: Electron.BrowserWindowConstructorOptions;
+function createWindows() {
+  // Main Window
+  mainWin = new BrowserWindow({
+    width: 400,
+    height: 300,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    show: false,
+    webPreferences: {
+      preload,
+      nodeIntegration: false,
+      contextIsolation: true,
+    },
+  });
+  mainWin.loadURL(`${startUrl}#/`);
+  mainWin.on('closed', () => {
+    mainWin = null;
+  });
 
+  // Settings Window
+  settingsWin = new BrowserWindow({
+    width: 800,
+    height: 600,
+    frame: false,
+    transparent: false,
+    show: false,
+    webPreferences: {
+      preload,
+      nodeIntegration: false,
+      contextIsolation: true,
+    },
+  });
+  settingsWin.loadURL(`${startUrl}#/settings`);
+  settingsWin.on('closed', () => {
+    settingsWin = null;
+  });
+}
+
+function toggleWindow(view: 'main' | 'settings') {
   if (view === 'main') {
-    // Main window: smaller, centered overlay
-    const mainWidth = 400;
-    const mainHeight = 300;
-    windowOptions = {
-      width: mainWidth,
-      height: mainHeight,
-      x: Math.round((width - mainWidth) / 2),
-      y: Math.round((height - mainHeight) / 2),
-      frame: false,
-      transparent: true,
-      alwaysOnTop: true,
-      webPreferences: {
-        preload,
-        nodeIntegration: false,
-        contextIsolation: true,
-      },
-    };
-  } else {
-    // Settings window: larger, standard window
-    windowOptions = {
-      width: 800,
-      height: 600,
-      frame: false,
-      transparent: false,
-      webPreferences: {
-        preload,
-        nodeIntegration: false,
-        contextIsolation: true,
-      },
-    };
-  }
-
-  if (win) {
-    if (currentView === view) {
-      if (view === 'main') {
-        if (win.isVisible()) {
-          win.hide();
-        } else {
-          win.show();
-        }
+    if (mainWin) {
+      if (mainWin.isVisible()) {
+        mainWin.hide();
       } else {
-        win.focus();
+        settingsWin?.hide();
+        mainWin.show();
+        mainWin.focus();
       }
-    } else {
-      // Close the existing window and create a new one
-      win.destroy();
-      win = null;
     }
-  }
-
-  if (!win) {
-    win = new BrowserWindow(windowOptions);
-
-    win.loadURL(startUrl);
-    win.webContents.once('did-finish-load', () => {
-      console.log(`Sending navigate event for ${view}`);
-      win?.webContents.send('navigate', view === 'main' ? '/' : '/settings');
-    });
-    currentView = view;
-    win.on('closed', () => {
-      win = null;
-    });
-
-    // Add this for debugging
-    // if (isDevelopment) {
-    //   win.webContents.openDevTools({ mode: 'detach' });
-    // }
+  } else if (view === 'settings') {
+    if (settingsWin) {
+      if (settingsWin.isVisible()) {
+        settingsWin.hide();
+      } else {
+        mainWin?.hide();
+        settingsWin.show();
+        settingsWin.focus();
+      }
+    }
   }
 }
 
 function createTray() {
   try {
-    const iconPath = join(process.env.VITE_PUBLIC, 'mic_idle.png');
+    const iconPath = join(VITE_PUBLIC, 'mic_idle.png');
     tray = new Tray(iconPath);
     const contextMenu = Menu.buildFromTemplate([
-      { label: 'Settings', click: () => createWindow('settings') },
+      { label: 'Settings', click: () => toggleWindow('settings') },
       { label: 'Exit', click: () => app.quit() },
     ]);
     tray.setToolTip('WhisperAll');
     tray.setTitle('WhisperAll');
     tray.setContextMenu(contextMenu);
 
+    let trayClickTimeout: NodeJS.Timeout | null = null;
+
     tray.on('click', () => {
-      createWindow('main');
+      if (trayClickTimeout) return;
+      toggleWindow('main');
+      trayClickTimeout = setTimeout(() => {
+        trayClickTimeout = null;
+      }, 300);
     });
   } catch (error) {
     console.error('Tray could not be created:', error);
   }
 }
 
-app.whenReady().then(createTray);
+app.whenReady().then(() => {
+  createWindows();
+  createTray();
+});
 
-app.on('window-all-closed', (event: { preventDefault: () => void }) => {
+app.on('window-all-closed', (event) => {
   event.preventDefault();
 });
 
+app.on('before-quit', () => {
+  mainWin?.destroy();
+  settingsWin?.destroy();
+});
+
 app.on('second-instance', () => {
-  if (win) {
-    if (win.isMinimized()) win.restore();
-    win.focus();
+  if (mainWin && mainWin.isVisible()) {
+    if (mainWin.isMinimized()) mainWin.restore();
+    mainWin.focus();
+  } else if (settingsWin && settingsWin.isVisible()) {
+    if (settingsWin.isMinimized()) settingsWin.restore();
+    settingsWin.focus();
   }
 });
 
 app.on('activate', () => {
-  if (!win) {
-    createWindow('main');
+  if (!mainWin && !settingsWin) {
+    createWindows();
   }
 });
 
-app.on('render-process-gone', (event, webContents, details) => {
-  console.error('Render process gone:', details.reason);
+const NAVIGATE_CHANNEL = 'navigate';
+
+ipcMain.handle(NAVIGATE_CHANNEL, (_, arg) => {
+  toggleWindow(arg === 'settings' ? 'settings' : 'main');
 });
 
-app.on('child-process-gone', (event, details) => {
-  console.error('Child process gone:', details.type, details.reason);
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
 });
 
-ipcMain.handle('open-win', (_, arg) => {
-  createWindow(arg === 'settings' ? 'settings' : 'main');
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
 });
